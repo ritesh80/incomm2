@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:cache="http://www.springframework.org/schema/cache"
+	xmlns:hz="http://www.hazelcast.com/schema/spring"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans     
+        http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+        http://www.springframework.org/schema/context 
+        http://www.springframework.org/schema/context/spring-context-3.2.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
+        http://www.springframework.org/schema/cache
+        http://www.springframework.org/schema/cache/spring-cache-3.2.xsd 
+        http://www.hazelcast.com/schema/spring 
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-2.1.xsd">
+    <cache:annotation-driven cache-manager="cacheManager" mode="proxy" proxy-target-class="true" />
+    <hz:hazelcast id="instance">
+        <hz:config>
+            <hz:group name="mygroup" password="mypassword" />
+            <hz:network port="5700" port-auto-increment="true">
+                <hz:join>
+                    <hz:multicast enabled="true" />
+                    <hz:tcp-ip enabled="true">
+                        <hz:interface>127.0.0.1:5700</hz:interface>
+                    </hz:tcp-ip>
+                </hz:join>
+                <hz:interfaces enabled="true">
+                    <hz:interface>127.0.0.1</hz:interface>
+                </hz:interfaces>
+            </hz:network>
+
+            <hz:map name="default">
+                <hz:map-store enabled="true" write-delay-seconds="0"
+                    class-name="com.mufumbo.server.cache.hazelcast.EmptyCacheMapLoader" />
+            </hz:map>
+
+            <hz:map name="null-map" />
+
+            <hz:map name="app" backup-count="3" async-backup-count="1"
+                time-to-live-seconds="100" max-size="1000" eviction-percentage="50"
+                cache-value="true" eviction-policy="LRU" merge-policy="hz.LATEST_UPDATE" />
+        </hz:config>
+    </hz:hazelcast>
+
+    <hz:config id="liteConfig">
+        <hz:lite-member>true</hz:lite-member>
+    </hz:config>
+
+    <!-- set hazelcast spring cache manager -->  
+    <bean id="cacheManager" class="com.hazelcast.spring.cache.HazelcastCacheManager">
+        <constructor-arg ref="instance" />
+    </bean>     
+</beans>
